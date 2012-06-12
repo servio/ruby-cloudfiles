@@ -37,15 +37,6 @@ module CloudFiles
     $KCODE = 'u'
   end
 
-  $:.unshift(File.dirname(__FILE__))
-  require 'client'
-  require 'cloudfiles/version'
-  require 'cloudfiles/exception'
-  require 'cloudfiles/authentication'
-  require 'cloudfiles/connection'
-  require 'cloudfiles/container'
-  require 'cloudfiles/storage_object'
-
   def self.lines(str)
     (str.respond_to?(:lines) ? str.lines : str).to_a.map { |x| x.chomp }
   end
@@ -55,31 +46,11 @@ module CloudFiles
   end
 end
 
-
-
-class SyntaxException             < StandardError # :nodoc:
-end
-class ConnectionException         < StandardError # :nodoc:
-end
-class AuthenticationException     < StandardError # :nodoc:
-end
-class InvalidResponseException    < StandardError # :nodoc:
-end
-class NonEmptyContainerException  < StandardError # :nodoc:
-end
-class NoSuchObjectException       < StandardError # :nodoc:
-end
-class NoSuchContainerException    < StandardError # :nodoc:
-end
-class NoSuchAccountException      < StandardError # :nodoc:
-end
-class MisMatchedChecksumException < StandardError # :nodoc:
-end
-class IOException                 < StandardError # :nodoc:
-end
-class CDNNotEnabledException      < StandardError # :nodoc:
-end
-class ObjectExistsException       < StandardError # :nodoc:
-end
-class ExpiredAuthTokenException   < StandardError # :nodoc:
-end
+$:.unshift(File.dirname(__FILE__))
+require 'cloudfiles/version'
+require 'cloudfiles/exception'
+require 'cloudfiles/authentication'
+require 'cloudfiles/connection'
+require 'cloudfiles/container'
+require 'cloudfiles/storage_object'
+require 'client'

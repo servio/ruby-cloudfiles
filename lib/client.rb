@@ -2,34 +2,7 @@ require 'rubygems'
 require 'uri'
 require 'json'
 
-class ClientException < StandardError
-  attr_reader :scheme, :host, :port, :path, :query, :status, :reason, :devices
-  def initialize(msg, params={})
-    @msg     = msg
-    @scheme  = params[:http_scheme]
-    @host    = params[:http_host]
-    @port    = params[:http_port]
-    @path    = params[:http_path]
-    @query   = params[:http_query]
-    @status  = params[:http_status]
-    @reason  = params[:http_reason]
-    @device  = params[:http_device]
-  end
-      
-  def to_s
-    a = @msg
-    b = ''
-    b += "#{@scheme}://" if @scheme
-    b += @host if @host
-    b +=  ":#{@port}" if @port
-    b += @path if @path
-    b += "?#{@query}" if @query
-    b ? b = "#{b} #{@status}" : b = @status.to_s if @status
-    b ? b = "#{b} #{@reason}" : b = "- #{@reason}" if @reason
-    b ? b = "#{b}: device #{@device}" : b = "device #{@device}" if @device
-    b ? "#{a} #{b}" : a
-  end
-end
+require 'cloudfiles/exception'
 
 class ChunkedConnectionWrapper
   def initialize(data, chunk_size)
@@ -121,7 +94,7 @@ private
           raise
         end
         @http_conn = nil
-      rescue ClientException => err
+      rescue CloudFiles::Exceptions::ClientException => err
         if @attempts > @retries
           raise
         end
@@ -161,11 +134,11 @@ public
       conn.verify_mode = OpenSSL::SSL::VERIFY_NONE
       [parsed, conn]
     else
-      raise ClientException.new(
+      raise CloudFiles::Exceptions::ClientException.new(
         "Cannot handle protocol scheme #{parsed.scheme} for #{url} %s")
     end
   end
-  
+
   def http_connection
     if !@http_conn
       @http_conn = SwiftClient.http_connection(@url)
@@ -173,13 +146,13 @@ public
       @http_conn
     end
   end
-  
+
   def self.get_auth(url, user, key, snet=false)
     parsed, conn = http_connection(url)
     conn.start if not conn.started?
     resp = conn.get(URI.encode(parsed.request_uri), {"x-auth-user" => user, "x-auth-key" => key })
     if resp.code.to_i < 200 or resp.code.to_i > 300
-      raise ClientException.new('Account GET failed', :http_scheme=>parsed.scheme,
+      raise CloudFiles::Exceptions::ClientException.new('Account GET failed', :http_scheme=>parsed.scheme,
                   :http_host=>conn.address, :http_port=>conn.port,
                   :http_path=>parsed.path, :http_query=>parsed.query, :http_status=>resp.code,
                   :http_reason=>resp.message)
@@ -224,7 +197,7 @@ public
     conn.start if !conn.started?
     resp = conn.get(parsed.request_uri, {'x-auth-token' => token})
     if resp.code.to_i < 200 or resp.code.to_i > 300
-      raise ClientException.new('Account GET failed', :http_scheme=>parsed.scheme,
+      raise CloudFiles::Exceptions::ClientException.new('Account GET failed', :http_scheme=>parsed.scheme,
                   :http_host=>conn.address, :http_port=>conn.port,
                   :http_path=>parsed.path, :http_query=>parsed.query, :http_status=>resp.code,
                   :http_reason=>resp.message)
@@ -253,7 +226,7 @@ public
     conn.start if !conn.started?
     resp = conn.head(parsed.request_uri, {'x-auth-token' => token})
     if resp.code.to_i < 200 or resp.code.to_i > 300
-      raise ClientException.new('Account HEAD failed', :http_scheme=>parsed.scheme,
+      raise CloudFiles::Exceptions::ClientException.new('Account HEAD failed', :http_scheme=>parsed.scheme,
               :http_host=>conn.address, :http_port=>conn.port,
               :http_path=>parsed.path, :http_status=>resp.code,
               :http_reason=>resp.message)
@@ -279,7 +252,7 @@ public
     conn.start if !conn.started?
     resp = conn.post(parsed.request_uri, nil, headers)
     if resp.code.to_i < 200 or resp.code.to_i > 300
-      raise ClientException.new('Account POST failed', :http_scheme=>parsed.scheme,
+      raise CloudFiles::Exceptions::ClientException.new('Account POST failed', :http_scheme=>parsed.scheme,
               :http_host=>conn.address, :http_port=>conn.port,
               :http_path=>parsed.path, :http_status=>resp.code,
               :http_reason=>resp.message)
@@ -321,7 +294,7 @@ public
     parsed.path += "/#{quote(container)}"
     resp = conn.get(parsed.request_uri, {'x-auth-token' => token})
     if resp.code.to_i < 200 or resp.code.to_i > 300
-      raise ClientException.new('Container GET failed', :http_scheme=>parsed.scheme,
+      raise CloudFiles::Exceptions::ClientException.new('Container GET failed', :http_scheme=>parsed.scheme,
                   :http_host=>conn.address, :http_port=>conn.port,
                   :http_path=>parsed.path, :http_query=>parsed.query, :http_status=>resp.code,
                   :http_reason=>resp.message)
@@ -352,7 +325,7 @@ public
     parsed.path += "/#{quote(container)}"
     resp = conn.head(parsed.request_uri, {'x-auth-token' => token})
     if resp.code.to_i < 200 or resp.code.to_i > 300
-      raise ClientException.new('Container HEAD failed', :http_scheme=>parsed.scheme,
+      raise CloudFiles::Exceptions::ClientException.new('Container HEAD failed', :http_scheme=>parsed.scheme,
                   :http_host=>conn.address, :http_port=>conn.port,
                   :http_path=>parsed.path, :http_status=>resp.code,
                   :http_reason=>resp.message)
@@ -381,7 +354,7 @@ public
     # headers['content-length'] = 0
     resp = conn.put(parsed.request_uri, nil, headers)
     if resp.code.to_i < 200 or resp.code.to_i > 300
-      raise ClientException.new('Container PUT failed', :http_scheme=>parsed.scheme,
+      raise CloudFiles::Exceptions::ClientException.new('Container PUT failed', :http_scheme=>parsed.scheme,
                   :http_host=>conn.address, :http_port=>conn.port,
                   :http_path=>parsed.path, :http_status=>resp.code,
                   :http_reason=>resp.message)  
@@ -404,7 +377,7 @@ public
     headers['x-auth-token'] = token
     resp = conn.post(parsed.request_uri, nil, headers)
     if resp.code.to_i < 200 or resp.code.to_i > 300
-      raise ClientException.new('Container POST failed', :http_scheme=>parsed.scheme,
+      raise CloudFiles::Exceptions::ClientException.new('Container POST failed', :http_scheme=>parsed.scheme,
                   :http_host=>conn.address, :http_port=>conn.port,
                   :http_path=>parsed.path, :http_status=>resp.code,
                   :http_reason=>resp.message)
@@ -427,7 +400,7 @@ public
     headers['x-auth-token'] = token
     resp = conn.delete(parsed.request_uri, headers)
     if resp.code.to_i < 200 or resp.code.to_i > 300
-      raise ClientException.new('Container DELETE failed', :http_scheme=>parsed.scheme,
+      raise CloudFiles::Exceptions::ClientException.new('Container DELETE failed', :http_scheme=>parsed.scheme,
                   :http_host=>conn.address, :http_port=>conn.port,
                   :http_path=>parsed.path, :http_status=>resp.code,
                   :http_reason=>resp.message)
@@ -461,7 +434,7 @@ public
       object_body = resp.body  
     end
     if resp.code.to_i < 200 or resp.code.to_i > 300
-      raise ClientException.new('Object GET failed', :http_scheme=>parsed.scheme,
+      raise CloudFiles::Exceptions::ClientException.new('Object GET failed', :http_scheme=>parsed.scheme,
                   :http_host=>conn.address, :http_port=>conn.port,
                   :http_path=>parsed.path, :http_status=>resp.code,
                   :http_reason=>resp.message)
@@ -489,7 +462,7 @@ public
     conn.start if not conn.started?
     resp = conn.head(parsed.request_uri, {'x-auth-token' => token})
     if resp.code.to_i < 200 or resp.code.to_i > 300
-      raise ClientException.new('Object HEAD failed', :http_scheme=>parsed.scheme,
+      raise CloudFiles::Exceptions::ClientException.new('Object HEAD failed', :http_scheme=>parsed.scheme,
                   :http_host=>conn.address, :http_port=>conn.port,
                   :http_path=>parsed.path, :http_status=>resp.code,
                   :http_reason=>resp.message)
@@ -546,7 +519,7 @@ public
       resp = conn.put(parsed.request_uri, contents, headers)
     end
     if resp.code.to_i < 200 or resp.code.to_i > 300
-      raise ClientException.new('Object PUT failed', :http_scheme=>parsed.scheme,
+      raise CloudFiles::Exceptions::ClientException.new('Object PUT failed', :http_scheme=>parsed.scheme,
                   :http_host=>conn.address, :http_port=>conn.port,
                   :http_path=>parsed.path, :http_status=>resp.code,
                   :http_reason=>resp.message)
@@ -557,7 +530,7 @@ public
   def put_object(container, obj, contents, content_length=nil, etag=nil, chunk_size=65536, content_type=nil, headers={})
     
     _default_reset = Proc.new do |args|
-      raise ClientException("put_object(#{container}, #{obj}, ...) failure and no ability to reset contents for reupload.")
+      raise CloudFiles::Exceptions::ClientException.new("put_object(#{container}, #{obj}, ...) failure and no ability to reset contents for reupload.")
     end
     reset_func = _default_reset
     if (contents.respond_to? :seek) and (contents.respond_to? :tell)
@@ -581,7 +554,7 @@ public
     headers['x-auth-token'] = token if token
     resp = conn.post(parsed.request_uri, nil, headers)
     if resp.code.to_i < 200 or resp.code.to_i > 300
-      raise ClientException.new('Object POST failed', :http_scheme=>parsed.scheme,
+      raise CloudFiles::Exceptions::ClientException.new('Object POST failed', :http_scheme=>parsed.scheme,
                   :http_host=>conn.address, :http_port=>conn.port,
                   :http_path=>parsed.path, :http_status=>resp.code,
                   :http_reason=>resp.message)
@@ -605,7 +578,7 @@ public
     headers['x-auth-token'] = token if token
     resp = conn.delete(parsed.request_uri, headers)
     if resp.code.to_i < 200 or resp.code.to_i > 300
-      raise ClientException.new('Object DELETE failed', :http_scheme=>parsed.scheme,
+      raise CloudFiles::Exceptions::ClientException.new('Object DELETE failed', :http_scheme=>parsed.scheme,
                   :http_host=>conn.address, :http_port=>conn.port,
                   :http_path=>parsed.path, :http_status=>resp.code,
                   :http_reason=>resp.message)

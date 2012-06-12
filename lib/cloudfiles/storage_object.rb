@@ -10,7 +10,7 @@ module CloudFiles
     attr_reader :container
 
     # Builds a new CloudFiles::StorageObject in the current container.  If force_exist is set, the object must exist or a
-    # CloudFiles::Exception::NoSuchObject Exception will be raised.  If not, an "empty" CloudFiles::StorageObject will be returned, ready for data
+    # CloudFiles::Exceptions::NoSuchObject Exception will be raised.  If not, an "empty" CloudFiles::StorageObject will be returned, ready for data
     # via CloudFiles::StorageObject.write
     def initialize(container, objectname, force_exists = false, make_path = false)
       @container = container
@@ -20,7 +20,7 @@ module CloudFiles
       @storagepath = "#{CloudFiles.escape @containername}/#{escaped_name}"
 
       if force_exists
-        raise CloudFiles::Exception::NoSuchObject, "Object #{@name} does not exist" unless container.object_exists?(objectname)
+        raise CloudFiles::Exceptions::NoSuchObject, "Object #{@name} does not exist" unless container.object_exists?(objectname)
       end
     end
 
@@ -36,8 +36,8 @@ module CloudFiles
       @object_metadata ||= (
         begin
           response = SwiftClient.head_object(self.container.connection.storageurl, self.container.connection.authtoken, self.container.escaped_name, escaped_name)
-        rescue ClientException => e
-          raise CloudFiles::Exception::NoSuchObject, "Object #{@name} does not exist" unless (e.status.to_s =~ /^20/)
+        rescue CloudFiles::Exceptions::ClientException => e
+          raise CloudFiles::Exceptions::NoSuchObject, "Object #{@name} does not exist" unless (e.status.to_s =~ /^20/)
         end
         resphash = {}
         metas = response.to_hash.select { |k,v| k.match(/^x-object-meta/) }
@@ -101,8 +101,8 @@ module CloudFiles
       begin
         response = SwiftClient.get_object(self.container.connection.storageurl, self.container.connection.authtoken, self.container.escaped_name, escaped_name)
         response[1]
-      rescue ClientException => e
-        raise CloudFiles::Exception::NoSuchObject, "Object #{@name} does not exist" unless (e.status.to_s =~ /^20/)
+      rescue CloudFiles::Exceptions::ClientException => e
+        raise CloudFiles::Exceptions::NoSuchObject, "Object #{@name} does not exist" unless (e.status.to_s =~ /^20/)
       end
     end
     alias :read :data
@@ -152,9 +152,9 @@ module CloudFiles
       begin
         SwiftClient.post_object(self.container.connection.storageurl, self.container.connection.authtoken, self.container.escaped_name, escaped_name, headers)
         true
-      rescue ClientException => e
-        raise CloudFiles::Exception::NoSuchObject, "Object #{@name} does not exist" if (e.status.to_s == "404")
-        raise CloudFiles::Exception::InvalidResponse, "Invalid response code #{e.status.to_s}" unless (e.status.to_s =~ /^20/)
+      rescue CloudFiles::Exceptions::ClientException => e
+        raise CloudFiles::Exceptions::NoSuchObject, "Object #{@name} does not exist" if (e.status.to_s == "404")
+        raise CloudFiles::Exceptions::InvalidResponse, "Invalid response code #{e.status.to_s}" unless (e.status.to_s =~ /^20/)
         false
       end
     end
@@ -180,9 +180,9 @@ module CloudFiles
       begin
         SwiftClient.post_object(self.container.connection.storageurl, self.container.connection.authtoken, self.container.escaped_name, escaped_name, headers)
         true
-      rescue ClientException => e
-        raise CloudFiles::Exception::NoSuchObject, "Object #{@name} does not exist" if (response.code == "404")
-        raise CloudFiles::Exception::InvalidResponse, "Invalid response code #{response.code}" unless (response.code =~ /^20/)
+      rescue CloudFiles::Exceptions::ClientException => e
+        raise CloudFiles::Exceptions::NoSuchObject, "Object #{@name} does not exist" if (response.code == "404")
+        raise CloudFiles::Exceptions::InvalidResponse, "Invalid response code #{response.code}" unless (response.code =~ /^20/)
         false
       end
     end
@@ -195,7 +195,7 @@ module CloudFiles
     # IO object for the data, such as: object.write(open('/path/to/file.mp3'))
     #
     # You can compute your own MD5 sum and send it in the "ETag" header.  If you provide yours, it will be compared to
-    # the MD5 sum on the server side.  If they do not match, the server will return a 422 status code and a CloudFiles::Exception::MisMatchedChecksum Exception
+    # the MD5 sum on the server side.  If they do not match, the server will return a 422 status code and a CloudFiles::Exceptions::MisMatchedChecksum Exception
     # will be raised.  If you do not provide an MD5 sum as the ETag, one will be computed on the server side.
     #
     # Updates the container cache and returns true on success, raises exceptions if stuff breaks.
@@ -217,16 +217,16 @@ module CloudFiles
     #  object.write(nil,{'header' => 'value})
 
     def write(data = nil, headers = {})
-      raise CloudFiles::Exception::Syntax, "No data or header updates supplied" if ((data.nil? && $stdin.tty?) and headers.empty?)
+      raise CloudFiles::Exceptions::Syntax, "No data or header updates supplied" if ((data.nil? && $stdin.tty?) and headers.empty?)
       # If we're taking data from standard input, send that IO object to cfreq
       data = $stdin if (data.nil? && $stdin.tty? == false)
       begin
         response = SwiftClient.put_object(self.container.connection.storageurl, self.container.connection.authtoken, self.container.escaped_name, escaped_name, data, nil, nil, nil, nil, headers)
-      rescue ClientException => e
+      rescue CloudFiles::Exceptions::ClientException => e
         code = e.status.to_s
-        raise CloudFiles::Exception::InvalidResponse, "Invalid content-length header sent" if (code == "412")
-        raise CloudFiles::Exception::MisMatchedChecksum, "Mismatched etag" if (code == "422")
-        raise CloudFiles::Exception::InvalidResponse, "Invalid response code #{code}" unless (code =~ /^20./)
+        raise CloudFiles::Exceptions::InvalidResponse, "Invalid content-length header sent" if (code == "412")
+        raise CloudFiles::Exceptions::MisMatchedChecksum, "Mismatched etag" if (code == "422")
+        raise CloudFiles::Exceptions::InvalidResponse, "Invalid response code #{code}" unless (code =~ /^20./)
       end
       make_path(File.dirname(self.name)) if @make_path == true
       self.refresh
@@ -250,14 +250,14 @@ module CloudFiles
     #   obj.purge_from_cdn("User@domain.com, User2@domain.com")
     #   => true
     def purge_from_cdn(email=nil)
-      raise Exception::CDNNotAvailable unless cdn_available?
+      raise CloudFiles::Exceptions::CDNNotAvailable unless cdn_available?
       headers = {}
       headers = {"X-Purge-Email" => email} if email
       begin
         SwiftClient.delete_object(self.container.connection.cdnurl, self.container.connection.authtoken, self.container.escaped_name, escaped_name, nil, headers)
         true
-      rescue ClientException => e
-        raise CloudFiles::Exception::Connection, "Error Unable to Purge Object: #{@name}" unless (e.status.to_s =~ /^20.$/)
+      rescue CloudFiles::Exceptions::ClientException => e
+        raise CloudFiles::Exceptions::Connection, "Error Unable to Purge Object: #{@name}" unless (e.status.to_s =~ /^20.$/)
         false
       end
     end
@@ -366,11 +366,11 @@ module CloudFiles
     #
     # Returns the new CloudFiles::StorageObject for the copied item.
     def copy(options = {})
-      raise CloudFiles::Exception::Syntax, "You must provide the :container, :name, or :headers for this operation" unless (options[:container] || options[:name] || options[:headers])
+      raise CloudFiles::Exceptions::Syntax, "You must provide the :container, :name, or :headers for this operation" unless (options[:container] || options[:name] || options[:headers])
       new_container = options[:container] || self.container.name
       new_name = options[:name] || self.name
       new_headers = options[:headers] || {}
-      raise CloudFiles::Exception::Syntax, "The :headers option must be a hash" unless new_headers.is_a?(Hash)
+      raise CloudFiles::Exceptions::Syntax, "The :headers option must be a hash" unless new_headers.is_a?(Hash)
       new_name.sub!(/^\//,'')
       headers = {'X-Copy-From' => "#{self.container.name}/#{self.name}", 'Content-Type' => self.content_type.sub(/;.+/, '')}.merge(new_headers)
       # , 'Content-Type' => self.content_type
@@ -378,12 +378,12 @@ module CloudFiles
       begin
         response = SwiftClient.put_object(self.container.connection.storageurl, self.container.connection.authtoken, (CloudFiles.escape new_container), escape_name(new_name), nil, nil, nil, nil, nil, headers)
         return CloudFiles::Container.new(self.container.connection, new_container).object(new_name)
-      rescue ClientException => e
+      rescue CloudFiles::Exceptions::ClientException => e
         code = e.status.to_s
-        raise CloudFiles::Exception::InvalidResponse, "Invalid response code #{response.code}" unless (response.code =~ /^20/)
+        raise CloudFiles::Exceptions::InvalidResponse, "Invalid response code #{response.code}" unless (response.code =~ /^20/)
       end
     end
-    
+
     # Takes the same options as the copy method, only it does a copy followed by a delete on the original object.
     #
     # Returns the new CloudFiles::StorageObject for the moved item. You should not attempt to use the old object after doing

@@ -21,23 +21,23 @@ class CloudfilesAuthenticationTest < Test::Unit::TestCase
   def test_bad_authentication
     SwiftClient.stubs(:get_auth).returns(nil)
     @connection = stub(:authuser => 'bad_user', :authkey => 'bad_key', :authok= => true, :authtoken= => true,  :auth_url => 'https://auth.api.rackspacecloud.com/v1.0', :cdn_available? => true, :snet? => false)
-    assert_raises(CloudFiles::Exception::Authentication) do
+    assert_raises(CloudFiles::Exceptions::Authentication) do
       result = CloudFiles::Authentication.new(@connection)
     end
   end
     
   def test_bad_hostname
-    Net::HTTP.stubs(:new).raises(CloudFiles::Exception::Connection)
+    Net::HTTP.stubs(:new).raises(CloudFiles::Exceptions::Connection)
     @connection = stub(:proxy_host => nil, :proxy_port => nil, :authuser => 'bad_user', :authkey => 'bad_key', :authok= => true, :authtoken= => true, :auth_url => 'https://auth.api.rackspacecloud.com/v1.0', :cdn_available? => true, :snet? => false)
-    assert_raises(CloudFiles::Exception::Connection) do
+    assert_raises(CloudFiles::Exceptions::Connection) do
       result = CloudFiles::Authentication.new(@connection)
     end
   end
   
   def test_authentication_general_exception
-    SwiftClient.stubs(:get_auth).raises(ClientException.new('foobar'))
+    SwiftClient.stubs(:get_auth).raises(CloudFiles::Exceptions::ClientException.new('foobar'))
     @connection = stub(:proxy_host => nil, :proxy_port => nil, :authuser => 'bad_user', :authkey => 'bad_key', :authok= => true, :authtoken= => true, :auth_url => 'https://auth.api.rackspacecloud.com/v1.0', :cdn_available? => true, :snet? => false)
-    assert_raises(CloudFiles::Exception::Connection) do 
+    assert_raises(CloudFiles::Exceptions::Connection) do
       result = CloudFiles::Authentication.new(@connection)
     end
   end

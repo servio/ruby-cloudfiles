@@ -29,37 +29,53 @@ end
 
 # The new properly scoped exceptions.
 
-module CloudFiles
-  class Exception
+module ::CloudFiles
+  module Exceptions
 
-    class Syntax             < SyntaxException
+    class Error              < StandardError; end # :nodoc:
+    class Syntax             < Error; end # :nodoc:
+    class Connection         < Error; end # :nodoc:
+    class Authentication     < Error; end # :nodoc:
+    class InvalidResponse    < Error; end # :nodoc:
+    class NonEmptyContainer  < Error; end # :nodoc:
+    class NoSuchObject       < Error; end # :nodoc:
+    class NoSuchContainer    < Error; end # :nodoc:
+    class NoSuchAccount      < Error; end # :nodoc:
+    class MisMatchedChecksum < Error; end # :nodoc:
+    class IO                 < Error; end # :nodoc:
+    class CDNNotEnabled      < Error; end # :nodoc:
+    class ObjectExists       < Error; end # :nodoc:
+    class ExpiredAuthToken   < Error; end # :nodoc:
+    class CDNNotAvailable    < Error; end # :nodoc:
+
+    class ClientException < Error
+      attr_reader :scheme, :host, :port, :path, :query, :status, :reason, :devices
+      def initialize(msg, params={})
+        @msg     = msg
+        @scheme  = params[:http_scheme]
+        @host    = params[:http_host]
+        @port    = params[:http_port]
+        @path    = params[:http_path]
+        @query   = params[:http_query]
+        @status  = params[:http_status]
+        @reason  = params[:http_reason]
+        @device  = params[:http_device]
+      end
+
+      def to_s
+        a = @msg
+        b = ''
+        b += "#{@scheme}://" if @scheme
+        b += @host if @host
+        b +=  ":#{@port}" if @port
+        b += @path if @path
+        b += "?#{@query}" if @query
+        b ? b = "#{b} #{@status}" : b = @status.to_s if @status
+        b ? b = "#{b} #{@reason}" : b = "- #{@reason}" if @reason
+        b ? b = "#{b}: device #{@device}" : b = "device #{@device}" if @device
+        b ? "#{a} #{b}" : a
+      end
     end
-    class Connection         < ConnectionException # :nodoc:
-    end
-    class Authentication     < AuthenticationException # :nodoc:
-    end
-    class InvalidResponse    < InvalidResponseException # :nodoc:
-    end
-    class NonEmptyContainer  < NonEmptyContainerException # :nodoc:
-    end
-    class NoSuchObject       < NoSuchObjectException # :nodoc:
-    end
-    class NoSuchContainer    < NoSuchContainerException # :nodoc:
-    end
-    class NoSuchAccount      < NoSuchAccountException # :nodoc:
-    end
-    class MisMatchedChecksum < MisMatchedChecksumException # :nodoc:
-    end
-    class IO                 < IOException # :nodoc:
-    end
-    class CDNNotEnabled      < CDNNotEnabledException # :nodoc:
-    end
-    class ObjectExists       < ObjectExistsException # :nodoc:
-    end
-    class ExpiredAuthToken   < ExpiredAuthTokenException # :nodoc:
-    end
-    class CDNNotAvailable    < StandardError
-    end
-    
+
   end
 end

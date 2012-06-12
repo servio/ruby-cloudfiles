@@ -6,7 +6,7 @@ module CloudFiles
     # Performs an authentication to the Cloud Files servers.  Opens a new HTTP connection to the API server,
     # sends the credentials, and looks for a successful authentication.  If it succeeds, it sets the cdmmgmthost,
     # cdmmgmtpath, storagehost, storagepath, authtoken, and authok variables on the connection.  If it fails, it raises
-    # an CloudFiles::Exception::Authentication exception.
+    # an CloudFiles::Exceptions::Authentication exception.
     #
     # Should never be called directly.
     def initialize(connection)
@@ -15,7 +15,7 @@ module CloudFiles
       rescue => e
         # uncomment if you suspect a problem with this branch of code
         # $stderr.puts "got error #{e.class}: #{e.message.inspect}\n" << e.traceback.map{|n| "\t#{n}"}.join("\n")
-        raise CloudFiles::Exception::Connection, "Unable to connect to #{connection.auth_url}", caller
+        raise CloudFiles::Exceptions::Connection, "Unable to connect to #{connection.auth_url}", caller
       end
       if auth_token 
         if headers["x-cdn-management-url"]
@@ -35,7 +35,7 @@ module CloudFiles
         connection.authok        = true
       else
         connection.authtoken = false
-        raise CloudFiles::Exception::Authentication, "Authentication failed"
+        raise CloudFiles::Exceptions::Authentication, "Authentication failed"
       end
     end
 

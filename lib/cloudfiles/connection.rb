@@ -81,8 +81,8 @@ module CloudFiles
     def initialize(*args)
       if args[0].is_a?(Hash)
         options = args[0]
-        @authuser = options[:username] ||( raise CloudFiles::Exception::Authentication, "Must supply a :username")
-        @authkey = options[:api_key] || (raise CloudFiles::Exception::Authentication, "Must supply an :api_key")
+        @authuser = options[:username] ||( raise CloudFiles::Exceptions::Authentication, "Must supply a :username")
+        @authkey = options[:api_key] || (raise CloudFiles::Exceptions::Authentication, "Must supply an :api_key")
         @auth_url = options[:authurl] || CloudFiles::AUTH_USA
         @auth_url = options[:auth_url] || CloudFiles::AUTH_USA
         @retry_auth = options[:retry_auth] || true
@@ -90,8 +90,8 @@ module CloudFiles
         @proxy_host = options[:proxy_host]
         @proxy_port = options[:proxy_port]
       else
-        @authuser = args[0] ||( raise CloudFiles::Exception::Authentication, "Must supply the username as the first argument")
-        @authkey = args[1] || (raise CloudFiles::Exception::Authentication, "Must supply the API key as the second argument")
+        @authuser = args[0] ||( raise CloudFiles::Exceptions::Authentication, "Must supply the username as the first argument")
+        @authkey = args[1] || (raise CloudFiles::Exceptions::Authentication, "Must supply the API key as the second argument")
         @retry_auth = args[2] || true
         @snet = (ENV['RACKSPACE_SERVICENET'] || args[3]) ? true : false
         @auth_url = CloudFiles::AUTH_USA
@@ -136,13 +136,13 @@ module CloudFiles
 
     def get_info
       begin
-        raise CloudFiles::Exception::AuthenticationException, "Not authenticated" unless self.authok?
+        raise CloudFiles::Exceptions::Authentication, "Not authenticated" unless self.authok?
         response = SwiftClient.head_account(storageurl, self.authtoken)
         @bytes = response["x-account-bytes-used"].to_i
         @count = response["x-account-container-count"].to_i
         {:bytes => @bytes, :count => @count}
-      rescue ClientException => e
-        raise CloudFiles::Exception::InvalidResponse, "Unable to obtain account size" unless (e.status.to_s == "204")
+      rescue CloudFiles::Exceptions::ClientException => e
+        raise CloudFiles::Exceptions::InvalidResponse, "Unable to obtain account size" unless (e.status.to_s == "204")
       end
     end
     
@@ -172,8 +172,8 @@ module CloudFiles
       begin
         response = SwiftClient.get_account(storageurl, self.authtoken, marker, limit)
         response[1].collect{|c| c['name']}
-      rescue ClientException => e
-        raise CloudFiles::Exception::InvalidResponse, "Invalid response code #{e.status.to_s}" unless (e.status.to_s == "200")
+      rescue CloudFiles::Exceptions::ClientException => e
+        raise CloudFiles::Exceptions::InvalidResponse, "Invalid response code #{e.status.to_s}" unless (e.status.to_s == "200")
       end
     end
     alias :list_containers :containers
@@ -192,8 +192,8 @@ module CloudFiles
       begin
         response = SwiftClient.get_account(storageurl, self.authtoken, marker, limit)
         Hash[*response[1].collect{|c| [c['name'], {:bytes => c['bytes'], :count => c['count']}]}.flatten]
-      rescue ClientException => e
-        raise CloudFiles::Exception::InvalidResponse, "Invalid response code #{e.status.to_s}" unless (e.status.to_s == "200")
+      rescue CloudFiles::Exceptions::ClientException => e
+        raise CloudFiles::Exceptions::InvalidResponse, "Invalid response code #{e.status.to_s}" unless (e.status.to_s == "200")
       end
     end
     alias :list_containers_info :containers_detail
@@ -209,7 +209,7 @@ module CloudFiles
       begin
         response = SwiftClient.head_container(storageurl, self.authtoken, containername)
         true
-      rescue ClientException => e
+      rescue CloudFiles::Exceptions::ClientException => e
         false
       end
     end
@@ -227,13 +227,13 @@ module CloudFiles
     #   container = cf.create_container('bad/name')
     #   => SyntaxException: Container name cannot contain '/'
     def create_container(containername)
-      raise CloudFiles::Exception::Syntax, "Container name cannot contain '/'" if containername.match("/")
-      raise CloudFiles::Exception::Syntax, "Container name is limited to 256 characters" if containername.length > 256
+      raise CloudFiles::Exceptions::Syntax, "Container name cannot contain '/'" if containername.match("/")
+      raise CloudFiles::Exceptions::Syntax, "Container name is limited to 256 characters" if containername.length > 256
       begin
         SwiftClient.put_container(storageurl, self.authtoken, containername)
         CloudFiles::Container.new(self, containername)
-      rescue ClientException => e
-        raise CloudFiles::Exception::InvalidResponse, "Unable to create container #{containername}" unless (e.status.to_s == "201" || e.status.to_s == "202")
+      rescue CloudFiles::Exceptions::ClientException => e
+        raise CloudFiles::Exceptions::InvalidResponse, "Unable to create container #{containername}" unless (e.status.to_s == "201" || e.status.to_s == "202")
       end
     end
 
@@ -251,9 +251,9 @@ module CloudFiles
     def delete_container(containername)
       begin
         SwiftClient.delete_container(storageurl, self.authtoken, containername)
-      rescue ClientException => e
-        raise CloudFiles::Exception::NonEmptyContainer, "Container #{containername} is not empty" if (e.status.to_s == "409")
-        raise CloudFiles::Exception::NoSuchContainer, "Container #{containername} does not exist" unless (e.status.to_s == "204")
+      rescue CloudFiles::Exceptions::ClientException => e
+        raise CloudFiles::Exceptions::NonEmptyContainer, "Container #{containername} is not empty" if (e.status.to_s == "409")
+        raise CloudFiles::Exceptions::NoSuchContainer, "Container #{containername} does not exist" unless (e.status.to_s == "204")
       end
       true
     end
@@ -271,8 +271,8 @@ module CloudFiles
       begin
         response = SwiftClient.get_account(cdnurl, self.authtoken)
         response[1].collect{|c| c['name']}
-      rescue ClientException => e
-        raise CloudFiles::Exception::InvalidResponse, "Invalid response code #{e.status.to_s}" unless (e.status.to_s == "200")
+      rescue CloudFiles::Exceptions::ClientException => e
+        raise CloudFiles::Exceptions::InvalidResponse, "Invalid response code #{e.status.to_s}" unless (e.status.to_s == "200")
       end
     end
     

@@ -51,8 +51,8 @@ class CloudfilesConnectionTest < Test::Unit::TestCase
   
   def test_get_info_fails
     @connection.authok = true
-    SwiftClient.stubs(:head_account).raises(ClientException.new("foo", :http_status => 999))
-    assert_raises(CloudFiles::Exception::InvalidResponse) do
+    SwiftClient.stubs(:head_account).raises(CloudFiles::Exceptions::ClientException.new("foo", :http_status => 999))
+    assert_raises(CloudFiles::Exceptions::InvalidResponse) do
       @connection.get_info
     end
   end
@@ -74,8 +74,8 @@ class CloudfilesConnectionTest < Test::Unit::TestCase
   end
   
   def test_public_containers_exception
-    SwiftClient.stubs(:get_account).raises(ClientException.new("test_public_containers_exception", :http_status => 999))
-    assert_raises(CloudFiles::Exception::InvalidResponse) do
+    SwiftClient.stubs(:get_account).raises(CloudFiles::Exceptions::ClientException.new("test_public_containers_exception", :http_status => 999))
+    assert_raises(CloudFiles::Exceptions::InvalidResponse) do
       public_containers = @connection.public_containers
     end
   end
@@ -87,15 +87,15 @@ class CloudfilesConnectionTest < Test::Unit::TestCase
   end
   
   def test_delete_nonempty_container
-    SwiftClient.stubs(:delete_container).raises(ClientException.new("test_delete_nonempty_container", :http_status => 409))
-    assert_raises(CloudFiles::Exception::NonEmptyContainer) do
+    SwiftClient.stubs(:delete_container).raises(CloudFiles::Exceptions::ClientException.new("test_delete_nonempty_container", :http_status => 409))
+    assert_raises(CloudFiles::Exceptions::NonEmptyContainer) do
       response = @connection.delete_container("not_empty")
     end
   end
   
   def test_delete_unknown_container
-    SwiftClient.stubs(:delete_container).raises(ClientException.new("test_delete_unknown_container", :http_status => 999))
-    assert_raises(CloudFiles::Exception::NoSuchContainer) do
+    SwiftClient.stubs(:delete_container).raises(CloudFiles::Exceptions::ClientException.new("test_delete_unknown_container", :http_status => 999))
+    assert_raises(CloudFiles::Exceptions::NoSuchContainer) do
       response = @connection.delete_container("not_empty")
     end
   end
@@ -109,20 +109,20 @@ class CloudfilesConnectionTest < Test::Unit::TestCase
   end
   
   def test_create_container_with_invalid_name
-    assert_raise(CloudFiles::Exception::Syntax) do
+    assert_raise(CloudFiles::Exceptions::Syntax) do
       container = @connection.create_container('a'*300)
     end
   end
   
   def test_create_container_name_filter
-    assert_raises(CloudFiles::Exception::Syntax) do 
+    assert_raises(CloudFiles::Exceptions::Syntax) do
       container = @connection.create_container('this/has/bad?characters')
     end
   end
   
   def test_create_container_error
-    SwiftClient.stubs(:put_container).raises(ClientException.new("test_create_container_general_error", :http_status => 999))
-    assert_raise(CloudFiles::Exception::InvalidResponse) do
+    SwiftClient.stubs(:put_container).raises(CloudFiles::Exceptions::ClientException.new("test_create_container_general_error", :http_status => 999))
+    assert_raise(CloudFiles::Exceptions::InvalidResponse) do
       container = @connection.create_container('foobar')
     end
   end
@@ -134,7 +134,7 @@ class CloudfilesConnectionTest < Test::Unit::TestCase
   end
   
   def test_container_exists_false
-    SwiftClient.stubs(:head_container).raises(ClientException.new("test_container_exists_false", :http_status => 404))
+    SwiftClient.stubs(:head_container).raises(CloudFiles::Exceptions::ClientException.new("test_container_exists_false", :http_status => 404))
     assert_equal @connection.container_exists?('this_does_not_exist'), false
   end
   
@@ -146,8 +146,8 @@ class CloudfilesConnectionTest < Test::Unit::TestCase
   end
   
   def test_fetch_nonexistent_container
-    CloudFiles::Container.any_instance.stubs(:container_metadata).raises(CloudFiles::Exception::NoSuchContainer)
-    assert_raise(CloudFiles::Exception::NoSuchContainer) do
+    CloudFiles::Container.any_instance.stubs(:container_metadata).raises(CloudFiles::Exceptions::NoSuchContainer)
+    assert_raise(CloudFiles::Exceptions::NoSuchContainer) do
       container = @connection.container('bad_container')
     end
   end
@@ -185,8 +185,8 @@ class CloudfilesConnectionTest < Test::Unit::TestCase
   end
   
   def test_containers_bad_result
-    SwiftClient.stubs(:get_account).raises(ClientException.new("foo", :http_status => 999))
-    assert_raises(CloudFiles::Exception::InvalidResponse) do
+    SwiftClient.stubs(:get_account).raises(CloudFiles::Exceptions::ClientException.new("foo", :http_status => 999))
+    assert_raises(CloudFiles::Exceptions::InvalidResponse) do
       containers = @connection.containers
     end
   end
@@ -206,8 +206,8 @@ class CloudfilesConnectionTest < Test::Unit::TestCase
   end
   
   def test_containers_detail_bad_response
-    SwiftClient.stubs(:get_account).raises(ClientException.new("foo", :http_status => 999))
-    assert_raises(CloudFiles::Exception::InvalidResponse) do
+    SwiftClient.stubs(:get_account).raises(CloudFiles::Exceptions::ClientException.new("foo", :http_status => 999))
+    assert_raises(CloudFiles::Exceptions::InvalidResponse) do
       details = @connection.containers_detail
     end
   end

@@ -40,9 +40,9 @@ class CloudfilesStorageObjectTest < Test::Unit::TestCase
   end
   
   def test_data_fails
-    SwiftClient.stubs(:get_object).raises(ClientException.new("test_data_fails", :http_status => 999))
+    SwiftClient.stubs(:get_object).raises(CloudFiles::Exceptions::ClientException.new("test_data_fails", :http_status => 999))
     build_swift_client_object
-    assert_raise(CloudFiles::Exception::NoSuchObject) do
+    assert_raise(CloudFiles::Exceptions::NoSuchObject) do
       @object.data
     end
   end
@@ -71,10 +71,10 @@ class CloudfilesStorageObjectTest < Test::Unit::TestCase
   
   # Need to find a way to simulate this properly
   def data_stream_fails
-    SwiftClient.stubs(:get_object).raises(ClientException.new("test_data_stream_fails", :http_status => 404))
+    SwiftClient.stubs(:get_object).raises(CloudFiles::Exceptions::ClientException.new("test_data_stream_fails", :http_status => 404))
     build_swift_client_object
     data = ""
-    assert_raise(CloudFiles::Exception::NoSuchObject) do
+    assert_raise(CloudFiles::Exceptions::NoSuchObject) do
       @object.data_stream { |chunk|
         data += chunk
       }
@@ -90,17 +90,17 @@ class CloudfilesStorageObjectTest < Test::Unit::TestCase
   end
   
   def test_set_metadata_invalid_object
-    SwiftClient.stubs(:post_object).raises(ClientException.new("test_set_metadata_invalid_object", :http_status => 404))
+    SwiftClient.stubs(:post_object).raises(CloudFiles::Exceptions::ClientException.new("test_set_metadata_invalid_object", :http_status => 404))
     build_swift_client_object
-    assert_raise(CloudFiles::Exception::NoSuchObject) do
+    assert_raise(CloudFiles::Exceptions::NoSuchObject) do
       @object.set_metadata({'Foo' =>'bar'})
     end
   end
   
   def test_set_metadata_fails
-    SwiftClient.stubs(:post_object).raises(ClientException.new("test_set_metadata_fails", :http_status => 999))
+    SwiftClient.stubs(:post_object).raises(CloudFiles::Exceptions::ClientException.new("test_set_metadata_fails", :http_status => 999))
     build_swift_client_object
-    assert_raise(CloudFiles::Exception::InvalidResponse) do
+    assert_raise(CloudFiles::Exceptions::InvalidResponse) do
       @object.set_metadata({'Foo' =>'bar'})
     end
   end
@@ -161,31 +161,31 @@ class CloudfilesStorageObjectTest < Test::Unit::TestCase
   def test_write_with_no_data_dies
     build_swift_client_object
     $stdin.stubs(:tty?).returns(true)
-    assert_raise(CloudFiles::Exception::Syntax) do
+    assert_raise(CloudFiles::Exceptions::Syntax) do
       @object.write(nil)
     end
   end
   
   def test_write_with_invalid_content_length_dies
-    SwiftClient.stubs(:put_object).raises(ClientException.new("test_write_with_invalid_content_length_dies", :http_status => '412'))
+    SwiftClient.stubs(:put_object).raises(CloudFiles::Exceptions::ClientException.new("test_write_with_invalid_content_length_dies", :http_status => '412'))
     build_swift_client_object
-    assert_raise(CloudFiles::Exception::InvalidResponse) do
+    assert_raise(CloudFiles::Exceptions::InvalidResponse) do
       @object.write('Test Data')
     end
   end
   
   def test_write_with_mismatched_md5_dies
-    SwiftClient.stubs(:put_object).raises(ClientException.new("test_write_with_mismatched_md5_dies", :http_status => '422'))
-    build_swift_client_object    
-    assert_raise(CloudFiles::Exception::MisMatchedChecksum) do
+    SwiftClient.stubs(:put_object).raises(CloudFiles::Exceptions::ClientException.new("test_write_with_mismatched_md5_dies", :http_status => '422'))
+    build_swift_client_object
+    assert_raise(CloudFiles::Exceptions::MisMatchedChecksum) do
       @object.write('Test Data')
     end
   end
   
   def test_write_with_invalid_response_dies
-    SwiftClient.stubs(:put_object).raises(ClientException.new("test_write_with_invalid_response_dies", :http_status => '999'))
+    SwiftClient.stubs(:put_object).raises(CloudFiles::Exceptions::ClientException.new("test_write_with_invalid_response_dies", :http_status => '999'))
     build_swift_client_object
-    assert_raise(CloudFiles::Exception::InvalidResponse) do
+    assert_raise(CloudFiles::Exceptions::InvalidResponse) do
       @object.write('Test Data')
     end
   end

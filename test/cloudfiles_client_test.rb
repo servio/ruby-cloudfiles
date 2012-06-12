@@ -13,7 +13,7 @@ class SwiftClientTest < Test::Unit::TestCase
   end
   
   def test_client_exception
-    foo = ClientException.new("foobar", :http_status => "404")
+    foo = CloudFiles::Exceptions::ClientException.new("foobar", :http_status => "404")
     assert_equal "foobar  404", foo.to_s
   end
   
@@ -67,7 +67,7 @@ class SwiftClientTest < Test::Unit::TestCase
   end
   
   def test_http_connection_with_bad_scheme
-    assert_raises(ClientException) do 
+    assert_raises(CloudFiles::Exceptions::ClientException) do
       parsed, conn = SwiftClient.http_connection("ftp://foo.bar:443/auth/v1.0")
     end
   end
@@ -113,8 +113,8 @@ class SwiftClientTest < Test::Unit::TestCase
     conn.stubs(:start).returns(nil)
     conn.stubs(:get).returns(response)
     SwiftClient.expects(:http_connection).returns([@parsed, conn])
-    
-    assert_raise(ClientException) do 
+
+    assert_raise(CloudFiles::Exceptions::ClientException) do
       SwiftClient.get_auth(@url, @user, @key)
     end
   end
@@ -148,7 +148,7 @@ class SwiftClientTest < Test::Unit::TestCase
     conn.stubs(:started?).returns(true)
     conn.stubs(:head).returns(response)
     SwiftClient.expects(:http_connection).returns([@parsed, conn])
-    assert_raise(ClientException) do 
+    assert_raise(CloudFiles::Exceptions::ClientException) do
       headers = SwiftClient.head_account(@url, @token)
     end
   end
@@ -278,7 +278,7 @@ class SwiftClientTest < Test::Unit::TestCase
     conn.stubs(:started?).returns(true)
     conn.stubs(:get).returns(response)
     SwiftClient.expects(:http_connection).returns([@parsed, conn])
-    assert_raise(ClientException) do 
+    assert_raise(CloudFiles::Exceptions::ClientException) do
       headers = SwiftClient.get_account(@url, @token)
     end
   end
@@ -306,7 +306,7 @@ class SwiftClientTest < Test::Unit::TestCase
     conn.stubs(:started?).returns(true)
     conn.stubs(:post).returns(response)
     SwiftClient.expects(:http_connection).returns([@parsed, conn])
-    assert_raise(ClientException) do 
+    assert_raise(CloudFiles::Exceptions::ClientException) do
       headers = SwiftClient.post_account(@url, @token, {"foo" => "bar"})
     end
   end
@@ -335,8 +335,8 @@ class SwiftClientTest < Test::Unit::TestCase
     conn.stubs(:started?).returns(true)
     conn.stubs(:head).returns(response)
     SwiftClient.expects(:http_connection).returns([@parsed, conn])
-    
-    assert_raise(ClientException) do
+
+    assert_raise(CloudFiles::Exceptions::ClientException) do
       headers, result = SwiftClient.head_container(@url, @token, 'test_container')
     end
   end
@@ -465,8 +465,8 @@ class SwiftClientTest < Test::Unit::TestCase
     conn.stubs(:started?).returns(true)
     conn.stubs(:get).returns(response)
     SwiftClient.expects(:http_connection).returns([@parsed, conn])
-    
-    assert_raise(ClientException) do
+
+    assert_raise(CloudFiles::Exceptions::ClientException) do
       headers, result = SwiftClient.get_container(@url, @token, 'test_container')
     end
   end
@@ -492,8 +492,8 @@ class SwiftClientTest < Test::Unit::TestCase
     conn.stubs(:started?).returns(true)
     conn.stubs(:put).returns(response)
     SwiftClient.expects(:http_connection).returns([@parsed, conn])
-    
-    assert_raise(ClientException) do
+
+    assert_raise(CloudFiles::Exceptions::ClientException) do
       headers, result = SwiftClient.put_container(@url, @token, 'test_container')
     end
   end
@@ -519,8 +519,8 @@ class SwiftClientTest < Test::Unit::TestCase
     conn.stubs(:started?).returns(true)
     conn.stubs(:post).returns(response)
     SwiftClient.expects(:http_connection).returns([@parsed, conn])
-    
-    assert_raise(ClientException) do
+
+    assert_raise(CloudFiles::Exceptions::ClientException) do
       headers, result = SwiftClient.post_container(@url, @token, 'test_container', {'x-container-metadata-foo' => 'bar'})
     end
   end
@@ -546,8 +546,8 @@ class SwiftClientTest < Test::Unit::TestCase
     conn.stubs(:started?).returns(true)
     conn.stubs(:delete).returns(response)
     SwiftClient.expects(:http_connection).returns([@parsed, conn])
-    
-    assert_raise(ClientException) do
+
+    assert_raise(CloudFiles::Exceptions::ClientException) do
       SwiftClient.delete_container(@url, @token, 'test_container')
     end
   end
@@ -573,8 +573,8 @@ class SwiftClientTest < Test::Unit::TestCase
     conn.stubs(:started?).returns(true)
     conn.stubs(:head).returns(response)
     SwiftClient.expects(:http_connection).returns([@parsed, conn])
-    
-    assert_raise(ClientException) do
+
+    assert_raise(CloudFiles::Exceptions::ClientException) do
       headers = SwiftClient.head_object(@url, @token, 'test_container', 'test_object')
     end
   end
@@ -592,8 +592,8 @@ class SwiftClientTest < Test::Unit::TestCase
     conn.stubs(:started?).returns(true)
     conn.stubs(:request_get).returns(response)
     SwiftClient.expects(:http_connection).returns([@parsed, conn])
-    
-    assert_nothing_raised do 
+
+    assert_nothing_raised do
       headers, body = SwiftClient.get_object(@url, @token, 'test_container', 'test_object')
       assert_equal response.header, headers
       assert_equal body, "this is the body"
@@ -608,8 +608,8 @@ class SwiftClientTest < Test::Unit::TestCase
     conn.stubs(:started?).returns(true)
     conn.stubs(:request_get).returns(response)
     SwiftClient.expects(:http_connection).returns([@parsed, conn])
-    
-    assert_raise(ClientException) do
+
+    assert_raise(CloudFiles::Exceptions::ClientException) do
       headers, body = SwiftClient.get_object(@url, @token, 'test_container', 'test_object')
     end
   end
@@ -645,7 +645,7 @@ class SwiftClientTest < Test::Unit::TestCase
     conn.stubs(:started?).returns(true)
     conn.stubs(:put).returns(response)
     SwiftClient.expects(:http_connection).returns([@parsed, conn])
-    assert_raise(ClientException) do
+    assert_raise(CloudFiles::Exceptions::ClientException) do
       SwiftClient.put_object(@url, @token, 'test_container', 'test_object', 'some data to put', 16)
     end
   end
@@ -681,7 +681,7 @@ class SwiftClientTest < Test::Unit::TestCase
     conn.stubs(:started?).returns(true)
     conn.stubs(:post).returns(response)
     SwiftClient.expects(:http_connection).returns([@parsed, conn])
-    assert_raise(ClientException) do
+    assert_raise(CloudFiles::Exceptions::ClientException) do
       SwiftClient.post_object(@url, @token, 'test_container', 'test_object', {"foo" => "bar"})
     end
   end
@@ -714,7 +714,7 @@ class SwiftClientTest < Test::Unit::TestCase
     conn.stubs(:started?).returns(true)
     conn.stubs(:delete).returns(response)
     SwiftClient.expects(:http_connection).returns([@parsed, conn])
-    assert_raise(ClientException) do
+    assert_raise(CloudFiles::Exceptions::ClientException) do
       SwiftClient.delete_object(@url, @token, 'test_container', 'test_object')
     end
   end
@@ -722,10 +722,10 @@ class SwiftClientTest < Test::Unit::TestCase
   def test_retry_failse
     auth_response = ['http://foo.bar:1234/v1/AUTH_test', 'AUTH_test', {'x-storage-url' => 'http://foo.bar:1234/v1/AUTH_test', 'x-storage-token' => 'AUTH_test', 'x-auth-token' => 'AUTH_test', 'content-length' => 0, 'date' => 'Tue, 11 Oct 2011 20:54:06 GMT'}]
     SwiftClient.expects(:get_auth).returns(auth_response)
-    SwiftClient.any_instance.stubs(:http_connection).raises(ClientException.new("foobar"))
+    SwiftClient.any_instance.stubs(:http_connection).raises(CloudFiles::Exceptions::ClientException.new("foobar"))
     sc = SwiftClient.new(@url, @user, @key)
     sc.get_auth
-    assert_raise(ClientException) do 
+    assert_raise(CloudFiles::Exceptions::ClientException) do
       sc.get_container("test_container")
     end
   end
