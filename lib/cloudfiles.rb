@@ -17,20 +17,20 @@
 # The CloudFiles class is the base class.  Not much of note happens here.
 # To create a new CloudFiles connection, use the CloudFiles::Connection.new(:username => 'user_name', :api_key => 'api_key') method.
 
+require 'rubygems'
+require 'net/http'
+require 'net/https'
+require 'rexml/document'
+require 'cgi'
+require 'uri'
+require 'digest/md5'
+require 'date'
+require 'time'
+
 module CloudFiles
 
   AUTH_USA = "https://auth.api.rackspacecloud.com/v1.0"
   AUTH_UK = "https://lon.auth.api.rackspacecloud.com/v1.0"
-
-  require 'net/http'
-  require 'net/https'
-  require 'rexml/document'
-  require 'cgi'
-  require 'uri'
-  require 'digest/md5'
-  require 'date'
-  require 'time'
-  require 'rubygems'
 
   unless "".respond_to? :each_char
     require "jcode"

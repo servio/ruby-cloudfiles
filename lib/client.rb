@@ -1,6 +1,7 @@
 require 'rubygems'
 require 'uri'
 require 'json'
+require 'net/http'
 
 require 'cloudfiles/exception'
 
