@@ -47,7 +47,7 @@ module CloudFiles
           response.to_hash.select { |k,v| k.match(/^x-container-meta/) }.each { |x| resphash[x[0]] = x[1].to_s }
           {:bytes => response["x-container-bytes-used"].to_i, :count => response["x-container-object-count"].to_i, :metadata => resphash, :container_read => response["x-container-read"], :container_write => response["x-container-write"]}
         rescue CloudFiles::Exceptions::ClientException => e
-          raise CloudFiles::Exceptions::NoSuchContainer, "Container #{@name} does not exist" unless (e.status.to_s =~ /^20/)
+          raise CloudFiles::Exceptions::NoSuchContainer, "Container #{@name} does not exist: " << e.message unless (e.status.to_s =~ /^20/)
         end
       )
     end
@@ -69,7 +69,7 @@ module CloudFiles
               :cdn_log => (cdn_enabled and response["x-log-retention"] == "True") ? true : false
             }
           rescue CloudFiles::Exceptions::ClientException => e
-            raise CloudFiles::Exceptions::NoSuchContainer, "Container #{@name} does not exist" unless (e.status.to_s =~ /^20/)
+            raise CloudFiles::Exceptions::NoSuchContainer, "Container #{@name} does not exist: " << e.message unless (e.status.to_s =~ /^20/)
           end
         )
       else
@@ -101,7 +101,7 @@ module CloudFiles
         self.refresh
         true
       rescue CloudFiles::Exceptions::ClientException => e
-        raise CloudFiles::Exceptions::NoSuchObject, "Container #{@name} does not exist" if (e.status.to_s == "404")
+        raise CloudFiles::Exceptions::NoSuchObject, "Container #{@name} does not exist: " << e.message if (e.status.to_s == "404")
         raise CloudFiles::Exceptions::InvalidResponse, "Invalid response code #{e.status}" unless (e.status.to_s =~ /^20/)
       end
     end
@@ -321,7 +321,7 @@ module CloudFiles
         SwiftClient.delete_object(self.connection.storageurl, self.connection.authtoken, escaped_name, objectname)
         true
       rescue CloudFiles::Exceptions::ClientException => e
-        raise CloudFiles::Exceptions::NoSuchObject, "Object #{objectname} does not exist" if (e.status.to_s == "404")
+        raise CloudFiles::Exceptions::NoSuchObject, "Object #{objectname} does not exist: " << e.message if (e.status.to_s == "404")
         raise CloudFiles::Exceptions::InvalidResponse, "Invalid response code #{e.status}" unless (e.status.to_s =~ /^20/)
       end
     end
@@ -350,7 +350,7 @@ module CloudFiles
       begin
         SwiftClient.put_container(self.connection.cdnurl, self.connection.authtoken, escaped_name)
       rescue CloudFiles::Exceptions::ClientException => e
-        raise CloudFiles::Exceptions::NoSuchContainer, "Container #{@name} does not exist" unless (e.status.to_s == "201" || e.status.to_s == "202")
+        raise CloudFiles::Exceptions::NoSuchContainer, "Container #{@name} does not exist: " << e.message unless (e.status.to_s == "201" || e.status.to_s == "202")
       end
       headers = { "X-TTL" => options[:ttl].to_s , "X-CDN-Enabled" => "True" }
       headers["X-User-Agent-ACL"] = options[:user_agent_acl] if options[:user_agent_acl]
@@ -401,7 +401,7 @@ module CloudFiles
         refresh
         true
       rescue CloudFiles::Exceptions::ClientException => e
-        raise CloudFiles::Exceptions::NoSuchContainer, "Container #{@name} does not exist" unless (e.status.to_s == "201" || e.status.to_s == "202")
+        raise CloudFiles::Exceptions::NoSuchContainer, "Container #{@name} does not exist: " << e.message unless (e.status.to_s == "201" || e.status.to_s == "202")
       end
     end
 
@@ -430,7 +430,7 @@ module CloudFiles
         SwiftClient.delete_container(self.connection.cdnurl, self.connection.authtoken, escaped_name, headers)
         true
       rescue CloudFiles::Exceptions::ClientException => e
-        raise CloudFiles::Exceptions::Connection, "Error Unable to Purge Container: #{@name}" unless (e.status.to_s > "200" && e.status.to_s < "299")
+        raise CloudFiles::Exceptions::Connection, "Error Unable to Purge Container: #{@name}: " << e.message unless (e.status.to_s > "200" && e.status.to_s < "299")
       end
     end
 

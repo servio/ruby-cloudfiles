@@ -20,7 +20,7 @@ module CloudFiles
       @storagepath = "#{CloudFiles.escape @containername}/#{escaped_name}"
 
       if force_exists
-        raise CloudFiles::Exceptions::NoSuchObject, "Object #{@name} does not exist" unless container.object_exists?(objectname)
+        raise CloudFiles::Exceptions::NoSuchObject, "Object #{@name} does not exist: " << e.message unless container.object_exists?(objectname)
       end
     end
 
@@ -37,7 +37,7 @@ module CloudFiles
         begin
           response = SwiftClient.head_object(self.container.connection.storageurl, self.container.connection.authtoken, self.container.escaped_name, escaped_name)
         rescue CloudFiles::Exceptions::ClientException => e
-          raise CloudFiles::Exceptions::NoSuchObject, "Object #{@name} does not exist" unless (e.status.to_s =~ /^20/)
+          raise CloudFiles::Exceptions::NoSuchObject, "Object #{@name} does not exist: " << e.message unless (e.status.to_s =~ /^20/)
         end
         resphash = {}
         metas = response.to_hash.select { |k,v| k.match(/^x-object-meta/) }
@@ -102,7 +102,7 @@ module CloudFiles
         response = SwiftClient.get_object(self.container.connection.storageurl, self.container.connection.authtoken, self.container.escaped_name, escaped_name)
         response[1]
       rescue CloudFiles::Exceptions::ClientException => e
-        raise CloudFiles::Exceptions::NoSuchObject, "Object #{@name} does not exist" unless (e.status.to_s =~ /^20/)
+        raise CloudFiles::Exceptions::NoSuchObject, "Object #{@name} does not exist: " << e.message unless (e.status.to_s =~ /^20/)
       end
     end
     alias :read :data
@@ -153,7 +153,7 @@ module CloudFiles
         SwiftClient.post_object(self.container.connection.storageurl, self.container.connection.authtoken, self.container.escaped_name, escaped_name, headers)
         true
       rescue CloudFiles::Exceptions::ClientException => e
-        raise CloudFiles::Exceptions::NoSuchObject, "Object #{@name} does not exist" if (e.status.to_s == "404")
+        raise CloudFiles::Exceptions::NoSuchObject, "Object #{@name} does not exist: " << e.message if (e.status.to_s == "404")
         raise CloudFiles::Exceptions::InvalidResponse, "Invalid response code #{e.status.to_s}" unless (e.status.to_s =~ /^20/)
         false
       end
@@ -181,7 +181,7 @@ module CloudFiles
         SwiftClient.post_object(self.container.connection.storageurl, self.container.connection.authtoken, self.container.escaped_name, escaped_name, headers)
         true
       rescue CloudFiles::Exceptions::ClientException => e
-        raise CloudFiles::Exceptions::NoSuchObject, "Object #{@name} does not exist" if (response.code == "404")
+        raise CloudFiles::Exceptions::NoSuchObject, "Object #{@name} does not exist: " << e.message if (response.code == "404")
         raise CloudFiles::Exceptions::InvalidResponse, "Invalid response code #{response.code}" unless (response.code =~ /^20/)
         false
       end
