@@ -19,7 +19,7 @@ class CloudfilesStorageObjectTest < Test::Unit::TestCase
   
   def test_public_url_exists
     build_swift_client_object(:name => 'test object', :public => true)
-    assert_equal @object.public_url, "http://cdn.test.example/test%20object"
+    assert_equal @object.public_url, "http://cdn.test.example/test object"
   end
   
   def test_public_url_does_not_exist

@@ -443,7 +443,9 @@ module CloudFiles
     end
     
     def escaped_name
-      CloudFiles.escape(@name)
+      #This used to encode the name, but it is already encoded in SwiftClient, so this causes problems
+      #CloudFiles.escape(@name)
+      return @name
     end
 
   end
